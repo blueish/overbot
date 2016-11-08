@@ -1,27 +1,36 @@
 import praw
 import yaml
 import pymongo
+import pickle
+
+import generate_responses
 
 def main():
     # params retunrns a dict with our info
+    print("Getting secrets...")
     params = get_secrets()
 
+    print("Opening database...")
     db = get_database()
     comments = db.comments
 
-    print(params)
-    r = connect_to_reddit(params)
-    r.login()
+    print("Unpickling responses")
+    responses = pickle.load(open('responses.p', 'rb'))
 
+    print("Connecting to reddit...")
+    r = connect_to_reddit(params)
+
+    print("Entering main loop...")
     main_loop(r, db)
 
 def main_loop(r, db):
     while True:
         subreddit = r.subreddit('overwatch')
-        for comment in subreddit.stream.comments(r):
+        for comment in subreddit.stream.comments():
             if matches_response(comment):
                 insert_comment(db.comment, comment)
                 print("Added response")
+            print('haha')
 
 
 def matches_response(comment):
@@ -34,12 +43,12 @@ def get_secrets():
 
 def connect_to_reddit(params):
     return praw.Reddit(
-            user_agent=params['user_agent'],
-            client_id=params['client_id'],
-            client_secret=params['client_secret'],
-            username=params['username'],
-            password=params['password']
-            )
+                user_agent=params['user_agent'],
+                client_id=params['client_id'],
+                client_secret=params['client_secret'],
+                username=params['username'],
+                password=params['password']
+           )
 
 def get_database():
     return pymongo.MongoClient()['reddit-bot']

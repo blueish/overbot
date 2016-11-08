@@ -2,9 +2,18 @@ import requests
 import bs4
 from bs4 import BeautifulSoup
 import pymongo
+import pickle
 
-# CONSTANTS
 BASE_URL = 'http://overwatch.gamepedia.com'
+
+
+def get_remote_responses():
+    url_stubs = get_hero_response_links()
+    # Map the urls to the base, and write them each to their own file
+    urls = map(lambda u: BASE_URL + u, url_stubs)
+    responses = generate_all_responses(urls)
+    f = open('responses.p', 'w+b')
+    pickle.dump(responses, f)
 
 def get_hero_response_links():
     r = requests.get("http://overwatch.gamepedia.com/Category:Quotations")
@@ -17,11 +26,6 @@ def get_hero_response_links():
             unparsed_links.append(str(link.get('href')))
     return unparsed_links
 
-def main():
-    url_stubs = get_hero_response_links()
-    # Map the urls to the base, and write them each to their own file
-    urls = map(lambda u: BASE_URL + u, url_stubs)
-    generate_all_responses(urls)
 
 def generate_all_responses(urls):
     responses = {}
@@ -54,6 +58,7 @@ def generate_all_responses(urls):
                         else:
                             # we keep track of the last one, next one might be audio
                             lastNode = tr.text.replace('\n', '')
+    return responses
 
 if __name__ == '__main__':
-    main()
+    get_remote_responses()
